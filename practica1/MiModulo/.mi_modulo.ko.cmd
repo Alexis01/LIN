@@ -1,0 +1,1 @@
+cmd_/home/alexis/uni/AILA/practica1/MiModulo/mi_modulo.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/alexis/uni/AILA/practica1/MiModulo/mi_modulo.ko /home/alexis/uni/AILA/practica1/MiModulo/mi_modulo.o /home/alexis/uni/AILA/practica1/MiModulo/mi_modulo.mod.o
