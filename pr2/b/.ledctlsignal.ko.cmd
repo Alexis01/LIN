@@ -1,0 +1,1 @@
+cmd_/home/kernel/workspace/pr2/b/ledctlsignal.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.14.1.lin/scripts/module-common.lds --build-id  -o /home/kernel/workspace/pr2/b/ledctlsignal.ko /home/kernel/workspace/pr2/b/ledctlsignal.o /home/kernel/workspace/pr2/b/ledctlsignal.mod.o
