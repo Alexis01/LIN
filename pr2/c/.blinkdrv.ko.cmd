@@ -1,0 +1,1 @@
+cmd_/home/kernel/Descargas/pr2/c/blinkdrv.ko := ld -r -m elf_x86_64 -T /usr/src/linux-headers-3.14.1.lin/scripts/module-common.lds --build-id  -o /home/kernel/Descargas/pr2/c/blinkdrv.ko /home/kernel/Descargas/pr2/c/blinkdrv.o /home/kernel/Descargas/pr2/c/blinkdrv.mod.o
