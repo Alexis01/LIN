@@ -87,7 +87,48 @@ static ssize_t fifoproc_read(struct file *, char *, size_t, loff_t *){
 static ssize_t fifoproc_write(struct file *, const char *, size_t, wloff_t *){
 
 }
+void fifoproc_open(bool abre_para_lectura) {
+	/* Completar */
 
+}
+int fifoproc_write(char* buff, int len) {
+	/* Completar */
+	char kbuffer[MAX_KBUF];
+
+	if (len> MAX_CBUFFER_LEN || len> MAX_KBUF) { 
+		return Error;
+	}
+
+	if (copy_from_user(kbuffer,buff,len)) { 
+		return Error;
+	}
+
+	lock(mtx);
+	/* Esperar hasta que haya hueco para insertar (debe haber consumidores) */
+	while (nr_gaps_cbuffer_t(cbuffer)<len && cons_count>0){
+		cond_wait(prod,mtx);
+	}
+	/* Detectar fin de comunicación por error (consumidor cierra FIFO antes) */
+	if (cons_count==0) {
+		unlock(mtx); 
+		return -EPIPE;
+	}
+	insert_items_cbuffer_t(cbuffer,kbuffer,len);
+	/* Despertar a posible consumidor bloqueado */
+	cond_signal(cons);
+	
+	unlock(mtx);
+	
+	return len;
+}
+int fifoproc_read(const char* buff, int len) {
+	/* Completar */
+
+}
+void fifoproc_release(bool lectura) {
+	/* Completar */
+
+}
 static int __init init_module(void){
 	
     if( createEntry() != 0 ){
