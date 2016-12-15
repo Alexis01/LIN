@@ -2,15 +2,14 @@
  *  Module that implements a fifo 
  */
 #include <linux/module.h>
-#include <linux/moduleparam.h>
 #include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/stat.h>
-#include <linux/vmalloc.h>
-#include <linux/ftrace.h>
 #include <linux/proc_fs.h>
+#include <linux/string.h>
+#include <linux/vmalloc.h>
 #include <asm-generic/uaccess.h>
-#include "cbuffer.c"
+#include <linux/ftrace.h>
+#include <linux/semaphore.h>
+#include "cbuffer.h"
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("fifoproc Kernel Module - FDI-UCM");
@@ -27,12 +26,17 @@ int cons_count = 0;/* Número de procesos que abrieron la entrada /proc para lec
 //Mutex para el buffer y los contadores
 struct semaphore mtx;/* para garantizar Exclusión Mutua */
 struct semaphore sem_prod; /* cola de espera para productor(es) */
-truct semaphore sem_cons; /* cola de espera para consumidor(es) */
+struct semaphore sem_cons; /* cola de espera para consumidor(es) */
 //Dos variables condicionales
 int nr_prod_waiting=0; /* Número de procesos productores esperando */
 int nr_cons_waiting=0; /* Número de procesos consumidores esperando */
 //Entrada /proc
 static struct proc_dir_entry *proc_entry;
+
+/* Funciones de inicialización y descarga del módulo */
+int init_module(void);
+void cleanup_module(void);
+
 
 static int fifoproc_open(struct inode *inode, struct file *file){
 	if( down_interruptible( &mtx ) ){
@@ -174,7 +178,18 @@ static const struct file_operations proc_entry_fops = {
     .release = fifoproc_release
 };
 
-static int __init init_module(void){
+int createEntry(void){
+    proc_entry = proc_create( "fifoproc", 0666, NULL, &proc_entry_fops );
+	if( proc_entry == NULL ){
+		printk(KERN_INFO "fifoproc: Can't create /proc/fifoproc entry\n");
+		return -ENOMEM;
+	}else{
+		printk(KERN_INFO "fifoproc: Creates /proc/fifoproc entry\n");
+	}
+	return 0;
+}
+
+int init_clipboard_module(void){
 	
     if( createEntry() != 0 ){
         printk(KERN_INFO "Cannot create entry!!\n");
@@ -192,37 +207,15 @@ static int __init init_module(void){
 	
 }
 
-static void __exit cleanup_module(void){
+void exit_clipboard_module(void){
 
 	remove_proc_entry("fifoproc", NULL);
-	vfree( modlist );
+	destroy_cbuffer_t(cbuffer);
 	printk(KERN_INFO "fifoproc: Removed\n");
 }
 
-
-
-int createEntry(void){
-    int ret = 0;
-	
-	modlist = (char *) vmalloc( BUFFER_LENGTH );
-	if(!modlist){
-		ret = -ENOMEM;
-	}else{
-		memset( modlist, 0, BUFFER_LENGTH );
-		proc_entry = proc_create( "fifoproc", 0666, NULL, &proc_entry_fops );
-		if( proc_entry == NULL ){
-			ret = -ENOMEM;
-			vfree( modlist );
-			printk(KERN_INFO "fifoproc: Can't create /proc/fifoproc entry\n");
-		}else{
-			printk(KERN_INFO "fifoproc: Creates /proc/fifoproc entry\n");
-		} 
-	}
-	return ret;
-}
-
-module_init(init_module);
-module_exit(cleanup_module);
+module_init(init_clipboard_module);
+module_exit(exit_clipboard_module);
 
 
 
