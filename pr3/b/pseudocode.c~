@@ -61,7 +61,7 @@ int fifoproc_read(const char* buff, int len) {
 		cond_wait(cons,mtx);
 	}
 
-	if (prod_count==0 && size_cbuffer_t(cbuffer) == 0 ) {
+	if (prod_count==0) {
 		unlock(mtx); 
 		return 0;
 	}

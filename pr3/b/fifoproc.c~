@@ -179,12 +179,12 @@ static const struct file_operations proc_entry_fops = {
 };
 
 int createEntry(void){
-    proc_entry = proc_create( "modfifo", 0666, NULL, &proc_entry_fops );
+    proc_entry = proc_create( "fifoproc", 0666, NULL, &proc_entry_fops );
 	if( proc_entry == NULL ){
-		printk(KERN_INFO "modfifo: Can't create /proc/fifoproc entry\n");
+		printk(KERN_INFO "fifoproc: Can't create /proc/fifoproc entry\n");
 		return -ENOMEM;
 	}else{
-		printk(KERN_INFO "modfifo: Creates /proc/fifoproc entry\n");
+		printk(KERN_INFO "fifoproc: Creates /proc/fifoproc entry\n");
 	}
 	return 0;
 }
@@ -201,7 +201,7 @@ int init_clipboard_module(void){
 		sema_init( &sem_cons, 0 );
 		//Inicializamos el buffer 
 		cbuffer = create_cbuffer_t(MAX_CBUFFER_LEN);
-		printk(KERN_INFO "modfifo: Loaded\n");
+		printk(KERN_INFO "fifoproc: Loaded\n");
 	    return 0;
     }
 	
@@ -209,9 +209,9 @@ int init_clipboard_module(void){
 
 void exit_clipboard_module(void){
 
-	remove_proc_entry("modfifo", NULL);
+	remove_proc_entry("fifoproc", NULL);
 	destroy_cbuffer_t(cbuffer);
-	printk(KERN_INFO "modfifo: Removed\n");
+	printk(KERN_INFO "fifoproc: Removed\n");
 }
 
 module_init(init_clipboard_module);
