@@ -1,0 +1,1 @@
+cmd_/home/alexis/uni/LIN/pr4/timermod.ko := ld -r -m elf_x86_64 -T ./scripts/module-common.lds --build-id  -o /home/alexis/uni/LIN/pr4/timermod.ko /home/alexis/uni/LIN/pr4/timermod.o /home/alexis/uni/LIN/pr4/timermod.mod.o

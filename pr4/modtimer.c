@@ -179,7 +179,7 @@ static int modtimer_release(struct inode *inode, struct file *file){
     //Delete timer
     del_timer_sync( &my_timer );
     //we have to wait 4 pending tasks //http://www.makelinux.net/books/lkd2/ch07lev1sec4
-    flush_schedule_work(); //***********OJO********
+    flush_scheduled_work(); //***********OJO********
 
     //Cleaning buffer
     spin_lock_irqsave( &sp, flags );
@@ -217,7 +217,7 @@ static ssize_t modconfig_read(struct file *filp, char __user *buf, size_t len, l
 
     is_finished = 1;
 
-    //Has perdido algo en mi pantalla?
+    
     if( copy_from_user( buf, k_buffer, len) ){
         return -EFAULT;
     }
@@ -283,7 +283,8 @@ static int  __init modulo_lin_init(void){
             printk(KERN_INFO "Cannot create /proc/* entries");
             return -ENOMEM;
     }else{
-        printk(KERN_INFO "Modulo cargado");
+        printk(KERN_INFO "modtimer: Module loaded. /proc/modtimer \n");
+        printk(KERN_INFO "modconfig: Module loaded. /proc/modconfig \n");
     }
     return 0;
 }
