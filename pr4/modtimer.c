@@ -9,8 +9,13 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
+#include <linux/vmalloc.h>
 
 #include "cbuffer.h"
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("List module - FDI-UCM");
+MODULE_AUTHOR("Alexis Cumbal Calderón");
 
 //Buffer vars
 #define BUFFER_LENGTH       PAGE_SIZE/8
@@ -46,7 +51,7 @@ struct work_struct work; /* work struct */
 typedef struct list_item_t {
     unsigned int data;
     struct list_head links;
-}
+};
 //copy_items_into_list funct
 static int copy_items_into_list(struct work_struct *work ){
 
@@ -164,17 +169,17 @@ static int modtimer_open(struct inode *inode, struct file *file){
     my_timer.expires = jiffies + timer_period_ms*(HZ/1000);
     //Activates timer once
     add_timer( &my_timer );
-
     return 0;
 }
 static int modtimer_release(struct inode *inode, struct file *file){
+   
     struct list_item_t* tmp = NULL;
     struct list_head *pos, *q;
 
     //Delete timer
     del_timer_sync( &my_timer );
-    //we have to wait 4 pending tasks
-    flush_schedule_work();
+    //we have to wait 4 pending tasks //http://www.makelinux.net/books/lkd2/ch07lev1sec4
+    flush_schedule_work(); //***********OJO********
 
     //Cleaning buffer
     spin_lock_irqsave( &sp, flags );
@@ -199,7 +204,7 @@ static const struct file_operations proc_entry_modtimer = {
 };
 //READ OPEN AND RELEASE FUNCTIONS -> CONFIG 
 static ssize_t modconfig_read(struct file *filp, char __user *buf, size_t len, loff_t *off){
-    
+
     static int is_finished = 0;
     char k_buffer[BUFFER_LENGTH];
     int n;
@@ -223,6 +228,7 @@ static ssize_t modconfig_read(struct file *filp, char __user *buf, size_t len, l
 Lee desde el usuario los parámetros de configuración del módulo
 */
 static ssize_t modconfig_write(struct file *filp, const char __user *buf, size_t len, loff_t *off){
+    
     unsigned long number1;
     int number2;
     char k_buffer[BUFFER_LENGTH];
@@ -241,11 +247,11 @@ static ssize_t modconfig_write(struct file *filp, const char __user *buf, size_t
             emergency_threshold = number2;
             printk(KERN_INFO "%i\n", emergency_threshold);
         }else{
-            printk(KERN_INFO "Emergency threshold must be between 0 and 100 \n", emergency_threshold);
+            printk(KERN_INFO "Emergency threshold must be between 0 and 100 \n");
         }
     }
 
-    if( sscanf( k_buffer, "Maximun random number %i", number2 ) == 1 ){
+    if( sscanf( k_buffer, "Maximun random number %i", &number2 ) == 1 ){
         max_random = number2;
         printk(KERN_INFO "%i\n", max_random);
     }
@@ -257,8 +263,9 @@ static const struct file_operations proc_entry_modconfig = {
     .read = modconfig_read,
     .write = modconfig_write,    
 };
+
 /* Función que se invoca cuando se carga el módulo en el kernel */
-int modulo_lin_init(void){
+static int  __init modulo_lin_init(void){
     //init semaphore
     sema_init(&mtx,1);
     sema_init(&sem_cons,0);
@@ -281,14 +288,13 @@ int modulo_lin_init(void){
     return 0;
 }
 /* Función que se invoca cuando se descarga el módulo del kernel */
-void modulo_lin_clean(void){
+static void __exit modulo_lin_clean(void){
     destroy_cbuffer_t(cbuffer);
     del_timer_sync(&my_timer);
     remove_proc_entry("modtimer", NULL);
     remove_proc_entry("modconfig", NULL);
     printk(KERN_INFO "modtimer: Module unloaded.\n");
     printk(KERN_INFO "modconfig: Module unloaded.\n");
-
 }
 /* Declaración de funciones init y cleanup */
 module_init(modulo_lin_init);
