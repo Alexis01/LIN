@@ -29,9 +29,9 @@ cbuffer_t* create_cbuffer_t (unsigned int max_size)
 
 	/* Stores bytes */
 #ifdef __KERNEL__ 
-	cbuffer->data=vmalloc(max_size*sizeof(unsigned int));
+	cbuffer->data=vmalloc(max_size);
 #else
-	cbuffer->data=malloc(max_size*sizeof(unsigned int));
+	cbuffer->data=malloc(max_size);
 #endif
 	if ( cbuffer->data == NULL)
 	{
@@ -85,7 +85,7 @@ int is_empty_cbuffer_t ( cbuffer_t* cbuffer )
 
 
 /* Inserts an item at the end of the buffer */
-void insert_cbuffer_t ( cbuffer_t* cbuffer, unsigned int new_item )
+void insert_cbuffer_t ( cbuffer_t* cbuffer, char new_item )
 {
 	unsigned int pos=0;
 	/* The buffer is full */
@@ -108,7 +108,7 @@ void insert_cbuffer_t ( cbuffer_t* cbuffer, unsigned int new_item )
 }
 
 /* Inserts nr_items into the buffer */
-void insert_items_cbuffer_t ( cbuffer_t* cbuffer, const unsigned int* items, int nr_items)
+void insert_items_cbuffer_t ( cbuffer_t* cbuffer, const char* items, int nr_items)
 {
 	int nr_items_left=nr_items;
 	int items_copied;
@@ -149,7 +149,7 @@ void insert_items_cbuffer_t ( cbuffer_t* cbuffer, const unsigned int* items, int
 }
 
 /* Removes nr_items from the buffer and returns a copy of them */
-void remove_items_cbuffer_t ( cbuffer_t* cbuffer, unsigned int* items, int nr_items)
+void remove_items_cbuffer_t ( cbuffer_t* cbuffer, char* items, int nr_items)
 {
 	int nr_items_left=nr_items;
 	int items_copied;
@@ -203,7 +203,7 @@ void clear_cbuffer_t (cbuffer_t* cbuffer) {
 }
 
 /* Returns the first element in the buffer */
-unsigned int* head_cbuffer_t ( cbuffer_t* cbuffer )
+char* head_cbuffer_t ( cbuffer_t* cbuffer )
 {
 	if ( cbuffer->size !=0 )
 		return &cbuffer->data[cbuffer->head];
