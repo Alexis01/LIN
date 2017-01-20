@@ -9,8 +9,13 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/spinlock.h>
-
+#include <linux/vmalloc.h>
 #include "cbuffer.h"
+
+
+MODULE_LICENSE("GPL");
+MODULE_DESCRIPTION("List module - FDI-UCM");
+MODULE_AUTHOR("Alexis Cumbal Calderón");
 
 #define BUFFER_LENGTH       PAGE_SIZE/8
 #define MAX_CBUFFER_LEN     10
@@ -87,9 +92,8 @@ static int copy_items_into_list(struct work_struct *work ){
     return 0;
 }
 
-/* Function invoked when timer expires (fires) */
-static void timer_handler(unsigned long data)
-{
+/* Manejador del timer */
+static void timer_handler(unsigned long data){
     unsigned int random = (get_random_int()%max_random);
     //unsigned char ch;
     int size, cpu_work, cpu_actual;
@@ -101,8 +105,6 @@ static void timer_handler(unsigned long data)
     insert_cbuffer_t(cbuffer,random);
     size = size_cbuffer_t(cbuffer);
     spin_unlock_irqrestore(&sp,flags);
-    
-    
     
     if(size*10 >= emergency_threshold){
         cpu_actual = smp_processor_id();
@@ -119,7 +121,7 @@ static void timer_handler(unsigned long data)
         schedule_work_on(cpu_work,&work);
     }       
                         
-     /* Re-activate the timer timer_period_ms from now */
+     /* Reactivamos el timer tras el periodo configurado */
     mod_timer( &(my_timer), jiffies + timer_period_ms*HZ/1000); 
 }
 
@@ -182,19 +184,16 @@ static int modtimer_release(struct inode *inode, struct file *file){
     struct list_item_t* tmp=NULL;
     struct list_head *pos, *q;
     
-    //ELIMINAMOS EL TIMER
+    //Borramos el timer
     del_timer_sync(&my_timer);
-    //ESPERAMOS A QUE ACABEN TODOS LOS TRABAJOS PLANIFICADOS
+    //Eperamos a la cola de trabajo
     flush_scheduled_work();
     
-    //VACIAMOS CBUFFER
+    //Vaciamos el buffer
     spin_lock_irqsave(&sp,flags);
     clear_cbuffer_t(cbuffer);
     spin_unlock_irqrestore(&sp,flags);
     
-    
-    
-    //write_lock_irq(&rwl);
     list_for_each_safe(pos, q, &mylist){
          tmp= list_entry(pos, struct list_item_t, links);
          list_del(pos);
@@ -272,9 +271,7 @@ static const struct file_operations proc_entry_modconfig = {
 
 
 /* Función que se invoca cuando se carga el módulo en el kernel */
-int modtimer_init(void)
-{
-    
+int modtimer_init(void){
     sema_init(&mtx,1);
     sema_init(&sem_cons,0);
     
@@ -284,12 +281,9 @@ int modtimer_init(void)
     proc_modconfig = proc_create("modconfig", 0666, NULL, &proc_entry_modconfig);
     proc_modtimer = proc_create("modtimer", 0666, NULL, &proc_entry_modtimer);
 
-
-         /* Create timer */
+    /* Create timer */
     init_timer(&my_timer);
-         
 
-                    
     if (proc_modconfig == NULL || proc_modtimer == NULL) {
         printk(KERN_INFO "MODTIMER: Cannot load this module \n");
         return -ENOMEM;     
@@ -297,15 +291,9 @@ int modtimer_init(void)
     else{
          printk(KERN_INFO "MODTIMER: Module loaded sucessfully!\n");
     }            
-    
-
-  return 0;
+    return 0;
 }
-
-
-/* Función que se invoca cuando se descarga el módulo del kernel */
-void modtimer_clean(void)
-{
+void modtimer_clean(void){
 
     destroy_cbuffer_t(cbuffer);
     
@@ -316,6 +304,5 @@ void modtimer_clean(void)
     printk(KERN_INFO "MOTIMER: Module released!\n");
 }
 
-/* Declaración de funciones init y cleanup */
 module_init(modtimer_init);
 module_exit(modtimer_clean);
